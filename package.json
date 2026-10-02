@@ -7,7 +7,10 @@
   "scripts": {
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "test": "node --test server/test/",
+    "server:seed": "node server/src/seed.js",
+    "server:start": "node server/src/httpServer.js"
   },
   "keywords": [],
   "author": "",
