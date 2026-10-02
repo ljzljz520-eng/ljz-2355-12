@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>语义差异 · Semantic Diff</title>
+<style>
+  :root {
+    --bg:#f7f8fa; --panel:#fff; --border:#e4e7ed; --text:#1f2329; --muted:#909399;
+    --primary:#409eff; --cosmetic:#909399; --minor:#e6a23c; --major:#f56c6c; --critical:#b82828;
+    --ok:#67c23a; --code-bg:#fafafa;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.7 -apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+  header { background:#fff; border-bottom:1px solid var(--border); padding:14px 24px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:10; }
+  header h1 { font-size:16px; margin:0; }
+  main { max-width:1100px; margin:24px auto; padding:0 24px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:8px; margin-bottom:16px; overflow:hidden; }
+  .card > .hd { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .card > .bd { padding:14px 16px; }
+  label { color:var(--muted); font-size:12px; }
+  input,select,button { font:inherit; }
+  input[type=text],select { border:1px solid var(--border); border-radius:4px; padding:6px 10px; min-width:140px; }
+  button { border:1px solid var(--primary); background:var(--primary); color:#fff; border-radius:4px; padding:6px 14px; cursor:pointer; }
+  button.ghost { background:#fff; color:var(--primary); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .stats { display:flex; gap:10px; flex-wrap:wrap; }
+  .pill { border-radius:999px; padding:2px 10px; font-size:12px; color:#fff; }
+  .pill.cosmetic { background:var(--cosmetic); } .pill.minor { background:var(--minor); }
+  .pill.major { background:var(--major); } .pill.critical { background:var(--critical); }
+  .meta { color:var(--muted); font-size:12px; }
+  .warn { background:#fdf6ec; border:1px solid #f5dab1; color:#946d1f; padding:10px 14px; border-radius:6px; margin:10px 0; }
+  .err { background:#fef0f0; border:1px solid #fbc4c4; color:#b82828; padding:10px 14px; border-radius:6px; margin:10px 0; }
+  .item { border:1px solid var(--border); border-radius:6px; margin:10px 0; }
+  .item .row { display:flex; align-items:center; gap:10px; padding:9px 12px; }
+  .item .detail { flex:1; }
+  .item .body { padding:0 12px 10px; display:none; }
+  .item.open .body { display:block; }
+  .item.cosmetic { background:#fafafa; }
+  .caret { cursor:pointer; user-select:none; color:var(--muted); width:16px; display:inline-block; }
+  .jump { font-size:12px; color:var(--primary); text-decoration:none; border:1px solid var(--border); padding:1px 8px; border-radius:4px; background:#fff; }
+  .jump:hover { border-color:var(--primary); }
+  code,.mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; }
+  .codeview { background:var(--code-bg); border:1px solid var(--border); border-radius:6px; margin:8px 0; max-height:340px; overflow:auto; }
+  .codeview table { border-collapse:collapse; width:100%; }
+  .codeview td { padding:0 8px; vertical-align:top; white-space:pre; }
+  .codeview .ln { color:#c0c4cc; text-align:right; user-select:none; width:44px; }
+  .codeview tr.del { background:#fef0f0; } .codeview tr.ins { background:#f0f9eb; }
+  .codeview tr.mark { background:#ecf5ff; }
+  .kv { font-size:12.5px; color:#606266; }
+  .kv b { color:#303133; }
+  .group-hd { display:flex; align-items:center; gap:8px; padding:8px 2px; cursor:pointer; user-select:none; }
+  .group-hd .count { color:var(--muted); font-size:12px; }
+  details.group { margin:6px 0; }
+  details.group > summary { cursor:pointer; padding:6px 4px; color:#606266; }
+  .badge-mode { font-size:12px; border:1px solid var(--border); border-radius:4px; padding:1px 8px; background:#fff; }
+  .badge-mode.degraded { border-color:#f5dab1; background:#fdf6ec; color:#946d1f; }
+  .floatview { position:fixed; right:16px; bottom:16px; width:min(560px,90vw); max-height:70vh; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,.15); display:none; flex-direction:column; z-index:50; }
+  .floatview.show { display:flex; }
+  .floatview .fhd { padding:8px 12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .floatview .fbd { overflow:auto; padding:0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>语义差异 Semantic Diff</h1>
+  <span class="meta">产品文档平台 · 结构化比较</span>
+</header>
+<main>
+  <div class="card">
+    <div class="hd">
+      <div><label>文档 ID</label><br><input id="docId" type="text" value="guide" /></div>
+      <div><label>基线版本</label><br><input id="baselineId" type="text" value="v1.0" /></div>
+      <div><label>目标版本</label><br><input id="targetId" type="text" value="v1.1" /></div>
+      <div><label>匹配模式</label><br>
+        <select id="mode"><option value="">自动（预算决定）</option><option value="global">全文最优</option><option value="local">受限局部</option></select>
+      </div>
+      <div><label>规则版本（可选）</label><br><input id="rulesVersion" type="text" placeholder="默认当前" /></div>
+      <div style="align-self:end; display:flex; gap:8px;">
+        <button id="btnCompare">比较</button>
+        <button id="btnCancel" class="ghost" disabled>取消</button>
+        <button id="btnShare" class="ghost" disabled>创建分享</button>
+        <button id="btnExport" class="ghost" disabled>导出冻结</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="notices"></div>
+  <div id="summary"></div>
+  <div id="results"></div>
+</main>
+
+<div class="floatview" id="float">
+  <div class="fhd"><strong id="floatTitle">原版位置</strong><button class="ghost" onclick="document.getElementById('float').classList.remove('show')">关闭</button></div>
+  <div class="fbd" id="floatBody"></div>
+</div>
+
+<script src="./app.js" type="module"></script>
+</body>
+</html>

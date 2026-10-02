@@ -72,7 +72,9 @@ export default defineConfig({
               text: '基础',
               items: [
                 { text: '安装', link: '/guide/installation' },
-                { text: '快速开始', link: '/guide/quickstart' }
+                { text: '快速开始', link: '/guide/quickstart' },
+                { text: '语义差异', link: '/guide/semantic-diff' },
+                { text: '语义差异控制台（应用）', link: '/semdiff/' }
               ]
             }
           ],
